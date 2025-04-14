@@ -1,0 +1,18 @@
+run = "run it"
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "run it"]
+
+[workflows]
+runButton = "Python"
+
+[[workflows.workflow]]
+name = "Python"
+author = 41518805
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python app.py"
