@@ -21,7 +21,8 @@ body {
   margin-bottom: 5rem;
 }
 .main{
-  padding-left : 2rem
+   color : red;
   display : flex;
   fles-wrap : wrap;
+  margin-right : 30rem
 }
