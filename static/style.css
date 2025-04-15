@@ -1,3 +1,27 @@
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+  background-image: ;
+  background-position:contain;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.container{
+  padding:1rem;
+  margin-bottom: 5rem;
+}
 .main{
-  color  : red;
+  padding-left : 2rem
+  display : flex;
+  fles-wrap : wrap;
 }
