@@ -36,7 +36,9 @@ def index():
             cur.execute("SELECT * FROM emp;")
             rows = cur.fetchall()
             for row in rows:
+                print(f"Row data: {row}")  # Debug print
                 content.append({'name': row[1]})  # Assuming name is in second column
+            print(f"Content to display: {content}")  # Debug print
             cur.close()
             connection_pool.putconn(conn)
         except Exception as e:
