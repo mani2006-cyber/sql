@@ -34,6 +34,7 @@ def index():
         try:
             cur = conn.cursor()
             cur.execute("SELECT * FROM emp;")
+            conn.commit()  # Add commit to ensure transaction completion
             rows = cur.fetchall()
             for row in rows:
                 print(f"Row data: {row}")  # Debug print

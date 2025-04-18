@@ -3,17 +3,20 @@ body {
   padding: 0;
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif;
-  background-image: ;
-  background-position:contain;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  text-align: center;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.content {
+  margin-top: 100px;
+  padding: 20px;
+}
+
+.item {
+  margin: 10px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 5px;
 }
 
 .container{
