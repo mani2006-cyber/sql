@@ -1,11 +1,12 @@
+
 from flask import Flask, render_template, jsonify
 import requests
 
 app = Flask(__name__)
 
 # Your Supabase credentials
-SUPABASE_URL = "https://<your-project-ref>.supabase.co"
-SUPABASE_API_KEY = "<your-anon-key>"
+SUPABASE_URL = "https://jrkbymyasrgwhxlegahu.supabase.co"
+SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyaWJ5bXlhc3JndmFuZGxlZ2FodSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzA5NzI5NzUwLCJleHAiOjIwMjUzMDU3NTB9.GhtLRCh7ALXsMbPN"
 
 @app.route('/')
 def index():
@@ -29,4 +30,4 @@ def index():
         return jsonify({"error": "Could not fetch data"}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
