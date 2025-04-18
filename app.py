@@ -6,14 +6,14 @@ from flask import jsonify
 
 app = Flask(__name__)
 
-# Create a connection pool
+# Create a connection pool with Supabase configuration
 connection_pool = pool.SimpleConnectionPool(
     1, 20,
-    host="aws-0-ap-south-1.pooler.supabase.com",
+    host="jrkbymyasrgwhxlegahu.supabase.co",
     database="postgres",
-    user="postgres.jrkbymyasrgwhxlegahu",
+    user="postgres",
     password="GhtLRCh7ALXsMbPN",
-    port=6543
+    port=5432
 )
 
 def get_db_connection():
@@ -46,11 +46,10 @@ def index():
 
     return render_template('index.html', content=content)
 
-# Clean up the connection pool when the application stops
+# Only close individual connections, not the entire pool
 @app.teardown_appcontext
-def close_pool(error):
-    if connection_pool:
-        connection_pool.closeall()
+def cleanup(error):
+    pass
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
