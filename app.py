@@ -7,20 +7,29 @@ from flask import jsonify
 app = Flask(__name__)
 
 def get_db_connection():
-    try:
-        conn = psycopg2.connect(
-            host="db.jrkbymyasrgwhxlegahu.supabase.co",
-            database="postgres",
-            user="postgres",
-            password="GhtLRCh7ALXsMbPN",
-            port=5432,
-            connect_timeout=10,
-            keepalives=1,
-            keepalives_idle=30,
-            keepalives_interval=10,
-            keepalives_count=5
-        )
-        return conn
+    max_retries = 3
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        try:
+            conn = psycopg2.connect(
+                host="db.jrkbymyasrgwhxlegahu.supabase.co",
+                database="postgres",
+                user="postgres",
+                password="GhtLRCh7ALXsMbPN",
+                port=5432,
+                connect_timeout=30,
+                tcp_keepalives=1,
+                application_name='my_flask_app'
+            )
+            print("Database connection successful!")
+            return conn
+        except psycopg2.OperationalError as e:
+            retry_count += 1
+            print(f"Attempt {retry_count} failed. Retrying...")
+            if retry_count == max_retries:
+                print(f"Failed to connect after {max_retries} attempts: {e}")
+                return None
     except psycopg2.OperationalError as e:
         print(f"Error connecting to database: {e}")
         return None
