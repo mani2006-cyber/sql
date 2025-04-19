@@ -1,33 +1,33 @@
-
-from flask import Flask, render_template, jsonify
-import requests
+from flask import Flask, render_template, request , jsonify
+import psycopg2
+from psycopg2 import pool
+import atexit  # to clean up at app exit
 
 app = Flask(__name__)
 
-# Your Supabase credentials
-SUPABASE_URL = "https://jrkbymyasrgwhxlegahu.supabase.co"
-SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyaWJ5bXlhc3JndmFuZGxlZ2FodSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzA5NzI5NzUwLCJleHAiOjIwMjUzMDU3NTB9.GhtLRCh7ALXsMbPN"
+# Initialize connection pool globally
+connection_pool = pool.SimpleConnectionPool(
+    1, 20, "postgresql://postgres.jrkbymyasrgwhxlegahu:GhtLRCh7ALXsMbPN@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
+)
+
+conn = connection_pool.getconn()
+
+content = []
+
+with conn.cursor() as cur:
+    cur.execute('Select*from emp;')
+    rows =cur.fetchall()
+    for row in rows:
+        print(type(row))
+        content.append( {'id' : row[0] , 'name' : row[1] ,'dep' : row[2] })
 
 @app.route('/')
 def index():
-    headers = {
-        "apikey": SUPABASE_API_KEY,
-        "Authorization": f"Bearer {SUPABASE_API_KEY}",
-        "Content-Type": "application/json"
-    }
 
-    # Call the 'emp' table
-    url = f"{SUPABASE_URL}/rest/v1/emp?select=*"
+    
+    return render_template('index.html', content=content)
+        
 
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raise error for bad status codes
-        data = response.json()
-        print("Data fetched:", data)
-        return render_template("index.html", content=data)
-    except requests.exceptions.RequestException as e:
-        print("Error fetching data:", e)
-        return jsonify({"error": "Could not fetch data"}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', debug=True)
