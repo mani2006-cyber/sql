@@ -12,26 +12,38 @@ connection_pool = pool.SimpleConnectionPool(
 
 conn = connection_pool.getconn()
 
-content = []
 
-with conn.cursor() as cur:
-    cur.execute('Select*from emp;')
-    rows =cur.fetchall()
-    for row in rows:
-        print(type(row))
-        content.append( {'id' : row[0] , 'name' : row[1] ,'dep' : row[2] })
+def get_db_connection():
+    try:
+        conn = connection_pool.getconn()
+        if conn is None:
+            raise Exception("failed to get connection from pool")
+        return conn
+    except Exception as e:
+        print(f'Error getting connection from pool: {e}')
 
+def database_table(name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM {name}")
+    rows = cur.fetchall()
+    keys = [desc[0] for desc in cur.description]
+    cur.close()
+    connection_pool.putconn(conn)
+    return rows , keys
+    
 @app.route('/')
 def index():
-    return render_template('index.html', content=content)
+    return render_template('index.html' ,  content =None  , keys = None)
 
-@app.route('/home')
-def home():
-    return render_template('home.html')
-
-@app.route('/researcher')
-def researcher():
-    return render_template('researcher.html')
+@app.route('/dashboard')
+def dashboard():
+    table = request.args.get('table')
+    content = []
+    rows ,keys = database_table(table)
+    for row in rows:
+        content.append(dict(zip(keys, row)))
+    return render_template('index.html'  , table_name = table ,content = content ,keys=keys)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

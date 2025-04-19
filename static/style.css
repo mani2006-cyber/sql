@@ -29,3 +29,6 @@ body {
   fles-wrap : wrap;
   margin-right : 30rem
 }
+.hide{
+  display : none;
+}

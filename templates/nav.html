@@ -1,4 +1,9 @@
-<div class ='container'>
+
+<link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+
+<div class ='container' style='
+    margin-bottom: 5rem;
+  '>
 
     <nav class="navbar navbar-dark bg-dark fixed-top">
       <div class="container-fluid">
@@ -21,8 +26,31 @@
                 <a class="nav-link active" aria-current="page" href="/">home</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/researcher">researchers</a>
+                <a class="nav-link" href="/dashboard?table=researcher">researchers</a>
               </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard?table=lab">lab</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard?table=maintenance">maintenance</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard?table=experiment_equipment">experiment_equipment</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard?table=experiment">experiment</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard?table=equipment">equipment</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard?table=chemical_usage">chemical_usage</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard?table=chemical">chemical</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard?table=access_control">access_control</a>
             </ul>
           </div>
         </div>

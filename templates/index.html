@@ -14,30 +14,46 @@
 <body>
   {% include 'nav.html' %}
 
-<div class="container">
-    <div class="row justify-content-center"> <!-- centers the table -->
-      <div class="col-9"> <!-- controls the width -->
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>id</th>
-              <th>name</th>
-              <th>dep</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for data in content %}
-            <tr>
-              <td>{{ data.id }}</td>
-              <td>{{ data.name }}</td>
-              <td>{{ data.dep }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+  {% if content %}
+    <div class='container col-8' style='margin-top: 100px;'>
+      <table class='table table-striped'>
+        <tr>
+          {% for head in keys %}
+          <th>{{ head }}</th>
+          {% endfor %}
+          <th>Actions</th>
+        </tr>
+        {% for row in content %}
+        <tr>
+          {% for key in keys %}
+          <td>{{ row[key] }}</td>
+          {% endfor %}
+
+          <td>
+            <div class="btn btn-warning">
+              edit
+            </div>
+            <div class="btn btn-danger">
+              delete
+            </div>
+            {% if table_name == 'researcher' %}
+              <div class="btn btn-success">
+                view
+              </div>
+            {% endif %}
+          </td>
+          
+        </tr>
+        {% endfor %}
+      </table>
     </div>
-  </div>
+  {% else %}
+    <div class='container col-8' style='margin-top: 100px;'>
+      <h2>Welcome! Select a table from the navbar.</h2>
+    </div>
+  {% endif %}
+
+
 
   
 </body>
