@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request , jsonify
+from flask import Flask, render_template, request , jsonify , flash , redirect
 import psycopg2
 from psycopg2 import pool
 import atexit  # to clean up at app exit
 
 app = Flask(__name__)
+app.secret_key = '567890'
 
 # Initialize connection pool globally
 connection_pool = pool.SimpleConnectionPool(
@@ -11,6 +12,7 @@ connection_pool = pool.SimpleConnectionPool(
 )
 
 conn = connection_pool.getconn()
+
 
 
 def get_db_connection():
@@ -44,6 +46,114 @@ def dashboard():
     for row in rows:
         content.append(dict(zip(keys, row)))
     return render_template('index.html'  , table_name = table ,content = content ,keys=keys)
+
+@app.route('/edit')
+def edit():
+    table = request.args.get('table')
+    record_id = request.args.get('id')
+
+    rows, keys = database_table(table)
+
+    content = None  # Make it a dict
+
+    for row in rows:
+        if row[0] == int(record_id):
+            content = dict(zip(keys, row))
+            break  # No need to keep looping
+
+    return render_template('edit.html', table_name=table, content=content, keys=keys)
+
+@app.route('/update', methods=['POST'])
+def update():
+    table = request.form.get('table')
+    record_id = request.form.get('id')
+    data = request.form.to_dict()
+    data.pop('table')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    set_clause = ', '.join([f"{key} = %s" for key in data.keys()])
+    cur.execute(f"UPDATE {table} SET {set_clause} WHERE id = %s", list(data.values()) + [record_id])
+    conn.commit()
+    cur.close()
+    connection_pool.putconn(conn)
+    flash('Record updated successfully!', 'success')
+    if table == 'researcher_view':
+        return redirect('/dashboard?table=researcher')
+    return redirect('/dashboard?table=' + table)
+
+@app.route('/deletee')
+def deletee():
+    table = request.args.get('table')
+    record_id = int(request.args.get('id'))
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(f"DELETE FROM {table} WHERE id = %s", (record_id,))
+    conn.commit()
+    cur.close()
+    connection_pool.putconn(conn)
+
+    flash('Record deleted successfully!', 'success')
+    return redirect(f'/dashboard?table={table}')
+
+@app.route('/view')
+def view():
+    table = request.args.get('table')
+    record_id = request.args.get('id')
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Correcting the query syntax
+    cur.execute(f"SELECT * FROM researcher as r JOIN researcher_view as v ON r.id = v.id WHERE v.id = %s", (record_id,))
+
+    row = cur.fetchone()  # Fetch the first matching record
+    keys = [desc[0] for desc in cur.description]  # Get column names
+    cur.close()
+    connection_pool.putconn(conn)
+
+    # Combine keys and row data into a dictionary
+    content = dict(zip(keys, row))
+
+    # Pass content and keys to the template for rendering
+    return render_template('view.html', table_name = table, content=content, keys=keys)
+
+@app.route('/back')
+def back():
+    table = request.args.get('table')
+    return redirect(f'/dashboard?table={table}')
+
+@app.route('/add')
+def add():
+    table = request.args.get('table')
+    rows , keys = database_table(table)
+    return render_template('add.html' , table_name = table , keys = keys)
+
+@app.route('/addrow', methods=['GET', 'POST'])
+def addrow():
+    table = request.args.get('table')
+
+    if request.method == 'POST':
+        data = request.form.to_dict()
+
+        columns = ', '.join(data.keys())
+        placeholders = ', '.join(['%s'] * len(data))
+        values = list(data.values())
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(f"INSERT INTO {table} ({columns}) VALUES ({placeholders})", values)
+        conn.commit()
+        cur.close()
+        connection_pool.putconn(conn)
+
+        flash('Record added successfully!', 'success')
+        return redirect(f'/dashboard?table={table}')
+
+    # GET method → render form
+    rows, keys = database_table(table)  # Use your own method to get column names
+    return render_template('add.html', table_name=table, keys=keys)
+
+    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

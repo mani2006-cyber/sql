@@ -14,8 +14,20 @@
 <body>
   {% include 'nav.html' %}
 
+
+
   {% if content %}
     <div class='container col-8' style='margin-top: 100px;'>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
       <table class='table table-striped'>
         <tr>
           {% for head in keys %}
@@ -30,29 +42,38 @@
           {% endfor %}
 
           <td>
-            <div class="btn btn-warning">
-              edit
-            </div>
-            <div class="btn btn-danger">
-              delete
-            </div>
+            <a href="/edit?table={{table_name}}&id={{row[keys[0]]}}" class="btn btn-warning">Edit</a>
+            <a href="/deletee?table={{table_name}}&id={{row[keys[0]]}}" class="btn btn-danger">Delete</a>
+
+
             {% if table_name == 'researcher' %}
-              <div class="btn btn-success">
-                view
-              </div>
+            <a href="/view?table={{ table_name }}&id={{ row[keys[0]] }}" class="btn btn-info">View</a>
+
             {% endif %}
           </td>
           
         </tr>
         {% endfor %}
       </table>
+    
+
+
+      <div>
+        <a href="/add?table={{ table_name }}" class="btn btn-primary">Add New Record</a>
+      </div>
+
+    
     </div>
+
   {% else %}
     <div class='container col-8' style='margin-top: 100px;'>
       <h2>Welcome! Select a table from the navbar.</h2>
     </div>
   {% endif %}
 
+
+  
+  
 
 
   

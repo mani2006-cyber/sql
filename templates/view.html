@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Researcher Profile</title>
+    {% include 'bootstrap.html' %}
+    <style>
+        /* Custom style for the passport-sized image */
+        .passport-photo {
+            width:  20rem; /* 3.5 cm in pixels (approx) */
+            height: 20rem; /* 4.5 cm in pixels (approx) */
+            object-fit: cover; /* Ensures the image fills the box without distortion */
+            border-radius: 50%; /* Circular border for the photo */
+            border: 5px solid #f8f9fa; /* White border around the photo */
+        }
+        /* Custom background color for the sections */
+        .photo-section {
+            background-color: #f0f8ff; /* Light sky blue for the photo section */
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
+        }
+        .content-section {
+            background-color: #f9f9f9; /* Light grey for the content section */
+            padding: 30px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+  {% include 'nav.html' %}
+  
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Researcher Profile</h1>
+
+    <!-- Researcher Info -->
+    <div class="photo-section">
+        <!-- Displaying researcher photo -->
+        <img src="https://tse3.mm.bing.net/th?id=OIP.e4GLb-hOfgNwCa7IY9RpGQHaFs&pid=Api&P=0&h=180" alt="Researcher Photo" class="passport-photo">
+    </div>
+    
+  <div class="content-section">
+      {% if content %}
+          {% for key in keys %}
+              <div class="row mb-2">
+                  <div class="col-sm-3 text-end fw-bold">{{ key }}:</div>
+                  <div class="col-sm-9">{{ content[key] }}</div>
+              </div>
+          {% endfor %}
+      {% endif %}
+  </div>
+
+  <a href="/edit?table=researcher_view&id={{ content[keys[0]] }}" class="btn btn-warning mt-3">edit</a>
+  <a href="/back?table={{ table_name }}" class="btn btn-secondary mt-3">Back</a>
+
+    
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
