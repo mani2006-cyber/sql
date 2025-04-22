@@ -27,7 +27,7 @@ def get_db_connection():
 def database_table(name):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT * FROM {name}")
+    cur.execute(f'SELECT * FROM "{name}"')
     rows = cur.fetchall()
     keys = [desc[0] for desc in cur.description]
     cur.close()
@@ -148,7 +148,8 @@ def post(tables, data_list):
             keys = data.keys()
             values = [str(v) if v is not None else None for v in data.values()]
             placeholders = ', '.join(['%s'] * len(keys))
-            query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES ({placeholders})"
+            quoted_keys = [f'"{k}"' for k in keys]
+            query = f'INSERT INTO "{table}" ({", ".join(quoted_keys)}) VALUES ({placeholders})'
             cur.execute(query, list(values))
         conn.commit()
     except Exception as e:
