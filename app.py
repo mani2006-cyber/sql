@@ -161,9 +161,11 @@ def post(tables, data_list):
 @app.route('/addrow', methods=['GET', 'POST'])
 def addrow():
     table = request.args.get('table')
+    if request.method == 'POST':
+        table = request.form.get('table', table)  # Get table from form data if available
     if not table:
         flash('No table specified', 'error')
-        return redirect('/dashboard')
+        return redirect('/')
 
     if request.method == 'POST':
         # Handle form submission

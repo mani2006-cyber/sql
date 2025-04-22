@@ -7,7 +7,8 @@
 <body class="bg-light">
   <div class="container mt-5">
     <h3>Step: {{ table_name.replace('_', ' ').title() }}</h3>
-    <form method="POST" action="/addrow?table={{ current_step }}">
+    <form method="POST" action="/addrow" class="p-4 shadow bg-white rounded">
+      <input type="hidden" name="table" value="{{ table_name }}">
       {% for key in keys %}
         <div class="mb-3">
           <label class="form-label">{{ key.replace('_', ' ').title() }}</label>
@@ -22,7 +23,7 @@
         {% else %}
           <a href="/dashboard?table={{ request.args.get('root_table', current_step) }}" class="btn btn-danger">Cancel</a>
         {% endif %}
-        
+
         {% if is_last %}
           <button type="submit" name="action" value="Submit" class="btn btn-success">Submit</button>
         {% else %}
