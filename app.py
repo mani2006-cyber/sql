@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request , jsonify , flash , redirect
+from flask import Flask, render_template, request ,session , jsonify , flash , redirect
 import psycopg2
 from psycopg2 import pool
 import atexit  # to clean up at app exit
@@ -128,32 +128,106 @@ def add():
     rows , keys = database_table(table)
     return render_template('add.html' , table_name = table , keys = keys)
 
-@app.route('/addrow', methods=['GET', 'POST'])
-def addrow():
-    table = request.args.get('table')
+form_tree = {
+    'researcher': ['researcher_view'],
+    'researcher_view': [],
+    'experiment': ['lab', 'equipment', 'chemical', 'chemical_usage'],
+    'lab': [],
+    'equipment': [],
+    'chemical': [],
+    'chemical_usage': []
+}
 
-    if request.method == 'POST':
-        data = request.form.to_dict()
-
-        columns = ', '.join(data.keys())
-        placeholders = ', '.join(['%s'] * len(data))
-        values = list(data.values())
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(f"INSERT INTO {table} ({columns}) VALUES ({placeholders})", values)
+def post(tables, data_list):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        for table, data in zip(tables, data_list):
+            if not data:  # Skip if no data
+                continue
+            keys = data.keys()
+            values = [str(v) if v is not None else None for v in data.values()]
+            placeholders = ', '.join(['%s'] * len(keys))
+            query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES ({placeholders})"
+            cur.execute(query, list(values))
         conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
         cur.close()
         connection_pool.putconn(conn)
 
-        flash('Record added successfully!', 'success')
-        return redirect(f'/dashboard?table={table}')
+@app.route('/addrow', methods=['GET', 'POST'])
+def addrow():
+    table = request.args.get('table')
+    if not table:
+        flash('No table specified', 'error')
+        return redirect('/dashboard')
 
-    # GET method → render form
-    rows, keys = database_table(table)  # Use your own method to get column names
-    return render_template('add.html', table_name=table, keys=keys)
+    if request.method == 'POST':
+        # Handle form submission
+        data = request.form.to_dict()
+        next_tables = form_tree.get(table, [])
 
-    
+        # Store current data in session for multi-step forms
+        if 'form_data' not in session:
+            session['form_data'] = {}
+        session['form_data'][table] = data
 
+        # Check if there are more steps
+        if next_tables:
+            next_table = next_tables[0]  # Get first child table
+            rows, keys = database_table(next_table)
+            is_last = len(next_tables) == 1 and not form_tree.get(next_table, [])
+            return render_template('add.html', 
+                                table_name=next_table, 
+                                keys=keys,
+                                is_last=is_last,
+                                current_step=next_table)
+        else:
+            # Final submission - collect all data from session
+            all_tables = []
+            all_data = []
+
+            # Determine the root table (the first one in the hierarchy)
+            root_table = table
+            while True:
+                found = False
+                for k, v in form_tree.items():
+                    if root_table in v:
+                        root_table = k
+                        found = True
+                        break
+                if not found:
+                    break
+
+            # Collect all data in hierarchy order
+            tables_to_process = [root_table]
+            while tables_to_process:
+                current = tables_to_process.pop(0)
+                if current in session.get('form_data', {}):
+                    all_tables.append(current)
+                    all_data.append(session['form_data'][current])
+                tables_to_process.extend(form_tree.get(current, []))
+
+            # Post all data
+            post(all_tables, all_data)
+
+            # Clear session data
+            session.pop('form_data', None)
+
+            flash('Record added successfully!', 'success')
+            return redirect(f'/dashboard?table={root_table}')
+
+    # GET request - show form for current table
+    rows, keys = database_table(table)
+    next_tables = form_tree.get(table, [])
+    is_last = not bool(next_tables)
+    return render_template('add.html', 
+                         table_name=table, 
+                         keys=keys,
+                         is_last=is_last,
+                         current_step=table)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

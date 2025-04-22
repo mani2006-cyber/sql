@@ -1,27 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ADD Record</title>
+  <title>Add {{ table_name }}</title>
   {% include 'bootstrap.html' %}
 </head>
 <body class="bg-light">
-
   <div class="container mt-5">
-    <h2>Add New Record</h2>
-
-    <!-- FIXED action line -->
-    <form method="POST" action="/addrow?table={{ table_name }}">
+    <h3>Step: {{ table_name.replace('_', ' ').title() }}</h3>
+    <form method="POST" action="/addrow?table={{ current_step }}">
       {% for key in keys %}
         <div class="mb-3">
-          <label class="form-label">{{ key }}</label>
-          <input type="text" class="form-control" name="{{ key }}">
+          <label class="form-label">{{ key.replace('_', ' ').title() }}</label>
+          <input type="text" class="form-control" name="{{ key }}" 
+                 value="{{ session['form_data'][current_step][key] if session.get('form_data', {}).get(current_step, {}).get(key) else '' }}">
         </div>
       {% endfor %}
 
-      <button type="submit" class="btn btn-success">Submit</button>
-      <a href="/dashboard?table={{ table_name }}" class="btn btn-secondary">Back</a>
+      <div class="d-flex justify-content-between">
+        {% if current_step != request.args.get('root_table', current_step) %}
+          <button type="submit" name="action" value="Back" class="btn btn-secondary">Back</button>
+        {% else %}
+          <a href="/dashboard?table={{ request.args.get('root_table', current_step) }}" class="btn btn-danger">Cancel</a>
+        {% endif %}
+        
+        {% if is_last %}
+          <button type="submit" name="action" value="Submit" class="btn btn-success">Submit</button>
+        {% else %}
+          <button type="submit" name="action" value="Next" class="btn btn-primary">Next</button>
+        {% endif %}
+      </div>
     </form>
   </div>
-
 </body>
 </html>
