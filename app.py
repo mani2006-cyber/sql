@@ -52,44 +52,111 @@ def edit():
     table = request.args.get('table')
     record_id = request.args.get('id')
 
-    rows, keys = database_table(table)
+    if not table or not record_id:
+        flash('Missing table or record ID', 'error')
+        return redirect('/dashboard')
 
-    content = None  # Make it a dict
+    try:
+        rows, keys = database_table(table)
+        content = None
 
-    for row in rows:
-        if row[0] == int(record_id):
-            content = dict(zip(keys, row))
-            break  # No need to keep looping
+        for row in rows:
+            if str(row[0]) == str(record_id):  # Compare as strings to avoid type issues
+                content = dict(zip(keys, row))
+                break
 
-    return render_template('edit.html', table_name=table, content=content, keys=keys)
+        if not content:
+            flash('Record not found', 'error')
+            return redirect(f'/dashboard?table={table}')
+
+        return render_template('edit.html', 
+                            table_name=table, 
+                            content=content, 
+                            keys=keys)
+    except Exception as e:
+        flash(f'Error retrieving record: {str(e)}', 'error')
+        return redirect(f'/dashboard?table={table}')
 
 @app.route('/update', methods=['POST'])
 def update():
     table = request.form.get('table')
     record_id = request.form.get('id')
-    data = request.form.to_dict()
-    data.pop('table')
-    conn = get_db_connection()
-    cur = conn.cursor()
-    set_clause = ', '.join([f"{key} = %s" for key in data.keys()])
-    cur.execute(f"UPDATE {table} SET {set_clause} WHERE id = %s", list(data.values()) + [record_id])
-    conn.commit()
-    cur.close()
-    connection_pool.putconn(conn)
-    flash('Record updated successfully!', 'success')
-    if table == 'researcher_view':
-        return redirect('/dashboard?table=researcher')
-    return redirect('/dashboard?table=' + table)
+    id_key = request.form.get('id_key')
+
+    if not all([table, record_id, id_key]):
+        flash('Missing required parameters', 'error')
+        return redirect('/dashboard')
+
+    try:
+        data = request.form.to_dict()
+        # Remove metadata fields
+        for field in ['table', 'id', 'id_key']:
+            data.pop(field, None)
+
+        # Get column info to validate
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Get column types for proper value handling
+        cur.execute("""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = %s
+        """, (table,))
+        column_types = {row[0]: row[1] for row in cur.fetchall()}
+
+        # Prepare update data
+        set_clauses = []
+        values = []
+        for key, value in data.items():
+            if key in column_types:
+                # Handle empty values based on column type
+                if value == '':
+                    if column_types[key] in ('date', 'timestamp without time zone'):
+                        value = None
+                    elif column_types[key] in ('integer', 'numeric'):
+                        value = None if value == '' else value
+
+                set_clauses.append(f'"{key}" = %s')
+                values.append(value)
+
+        if not set_clauses:
+            flash('No valid fields to update', 'error')
+            return redirect(f'/dashboard?table={table}')
+
+        # Add record ID for WHERE clause
+        values.append(record_id)
+
+        query = f'UPDATE "{table}" SET {", ".join(set_clauses)} WHERE "{id_key}" = %s'
+        cur.execute(query, values)
+        conn.commit()
+
+        flash('Record updated successfully!', 'success')
+        return redirect(f'/dashboard?table={table}')
+
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error updating record: {str(e)}', 'error')
+        return redirect(f'/edit?table={table}&id={record_id}')
+    finally:
+        cur.close()
+        connection_pool.putconn(conn)
 
 @app.route('/deletee')
 def deletee():
+    id_name = request.args.get('id_key')
     table = request.args.get('table')
     record_id = int(request.args.get('id'))
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(f"DELETE FROM {table} WHERE id = %s", (record_id,))
-    conn.commit()
+    try:
+        cur.execute(f'DELETE FROM "{table}" WHERE "{id_name}" = %s', (record_id,))
+        conn.commit()
+        flash('Record deleted successfully!', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error deleting record: {str(e)}', 'error')
     cur.close()
     connection_pool.putconn(conn)
 
@@ -131,11 +198,12 @@ def add():
 form_tree = {
     'researcher': ['researcher_view'],
     'researcher_view': [],
-    'experiment': ['lab', 'equipment', 'chemical', 'chemical_usage'],
+    'experiment': ['chemical_usage'],
     'lab': [],
     'equipment': [],
     'chemical': [],
-    'chemical_usage': []
+    'chemical_usage': [],
+    'Maintenance' :[]
 }
 
 def post(tables, data_list):
@@ -145,16 +213,39 @@ def post(tables, data_list):
         for table, data in zip(tables, data_list):
             if not data:  # Skip if no data
                 continue
-            keys = data.keys()
-            values = [str(v) if v is not None else None for v in data.values()]
+
+            # Create a copy of the data dictionary and remove non-column fields
+            data_copy = data.copy()
+
+            # Remove special fields that shouldn't be inserted into the table
+            for field in ['table', 'action']:
+                if field in data_copy:
+                    del data_copy[field]
+
+            # Get the actual column names from the database
+            cur.execute(f'SELECT column_name FROM information_schema.columns WHERE table_name = %s', (table,))
+            valid_columns = [row[0] for row in cur.fetchall()]
+
+            # Filter out any keys that aren't actual columns in the table
+            filtered_data = {k: v for k, v in data_copy.items() if k in valid_columns}
+
+            if not filtered_data:
+                continue
+
+            keys = filtered_data.keys()
+            values = [str(v) if v is not None else None for v in filtered_data.values()]
             placeholders = ', '.join(['%s'] * len(keys))
             quoted_keys = [f'"{k}"' for k in keys]
+
             query = f'INSERT INTO "{table}" ({", ".join(quoted_keys)}) VALUES ({placeholders})'
             cur.execute(query, list(values))
+
         conn.commit()
+        return True
     except Exception as e:
         conn.rollback()
-        raise e
+        flash(f'Error saving data: {str(e)}', 'error')
+        return False
     finally:
         cur.close()
         connection_pool.putconn(conn)

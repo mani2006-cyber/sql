@@ -43,7 +43,7 @@
 
           <td>
             <a href="/edit?table={{table_name}}&id={{row[keys[0]]}}" class="btn btn-warning">Edit</a>
-            <a href="/deletee?table={{table_name}}&id={{row[keys[0]]}}" class="btn btn-danger">Delete</a>
+            <a href="/deletee?table={{table_name}}&id={{row[keys[0]]}}&id_key={{keys[0]}}" class="btn btn-danger">Delete</a>
 
 
             {% if table_name == 'researcher' %}

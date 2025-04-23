@@ -3,6 +3,15 @@
 <head>
   <title>Add {{ table_name }}</title>
   {% include 'bootstrap.html' %}
+  <!-- Add jQuery and Bootstrap Datepicker -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+  <style>
+    .datepicker {
+      z-index: 9999 !important;
+    }
+  </style>
 </head>
 <body class="bg-light">
   <div class="container mt-5">
@@ -12,25 +21,55 @@
       {% for key in keys %}
         <div class="mb-3">
           <label class="form-label">{{ key.replace('_', ' ').title() }}</label>
-          <input type="text" class="form-control" name="{{ key }}" 
-                 value="{{ session['form_data'][current_step][key] if session.get('form_data', {}).get(current_step, {}).get(key) else '' }}">
+          {% if 'date' in key.lower() %}
+            <!-- Date field with calendar picker -->
+            <div class="input-group date" id="datepicker_{{ key }}">
+              <input type="text" class="form-control" name="{{ key }}" 
+                     value="{{ session['form_data'][current_step][key] if session.get('form_data', {}).get(current_step, {}).get(key) else '' }}">
+              <span class="input-group-append">
+                <span class="input-group-text bg-white">
+                  <i class="fa fa-calendar"></i>
+                </span>
+              </span>
+            </div>
+          {% else %}
+            <!-- Regular text field -->
+            <input type="text" class="form-control" name="{{ key }}" 
+                   value="{{ session['form_data'][current_step][key] if session.get('form_data', {}).get(current_step, {}).get(key) else '' }}">
+          {% endif %}
         </div>
       {% endfor %}
 
       <div class="d-flex justify-content-between">
-        {% if current_step != request.args.get('root_table', current_step) %}
-          <button type="submit" name="action" value="Back" class="btn btn-secondary">Back</button>
-        {% else %}
-          <a href="/dashboard?table={{ request.args.get('root_table', current_step) }}" class="btn btn-danger">Cancel</a>
-        {% endif %}
+          {% if current_step != request.args.get('root_table', current_step) %}
+              <button type="submit" name="action" value="Back" class="btn btn-secondary">Back</button>
+          {% else %}
+              <a href="/dashboard?table={{ table_name }}" class="btn btn-danger">Cancel</a>
+          {% endif %}
 
-        {% if is_last %}
-          <button type="submit" name="action" value="Submit" class="btn btn-success">Submit</button>
-        {% else %}
-          <button type="submit" name="action" value="Next" class="btn btn-primary">Next</button>
-        {% endif %}
+          {% if is_last %}
+              <button type="submit" name="action" value="Submit" class="btn btn-success">Submit</button>
+          {% else %}
+              <button type="submit" name="action" value="Next" class="btn btn-primary">Next</button>
+          {% endif %}
       </div>
     </form>
   </div>
+
+  <script>
+    $(document).ready(function(){
+      // Initialize datepickers for all date fields
+      $('[id^="datepicker_"]').datepicker({
+        format: 'yyyy-mm-dd',  // Format that matches most databases
+        autoclose: true,
+        todayHighlight: true
+      });
+      
+      // Font Awesome icon if not already loaded
+      if (!$('link[href*="font-awesome"]').length) {
+        $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">');
+      }
+    });
+  </script>
 </body>
 </html>
