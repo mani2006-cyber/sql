@@ -159,30 +159,52 @@ def deletee():
         flash(f'Error deleting record: {str(e)}', 'error')
     cur.close()
     connection_pool.putconn(conn)
-
-    flash('Record deleted successfully!', 'success')
     return redirect(f'/dashboard?table={table}')
 
 @app.route('/view')
 def view():
     table = request.args.get('table')
     record_id = request.args.get('id')
-    conn = get_db_connection()
-    cur = conn.cursor()
+    name_column = request.args.get('name')
 
-    # Correcting the query syntax
-    cur.execute(f"SELECT * FROM researcher as r JOIN researcher_view as v ON r.id = v.id WHERE v.id = %s", (record_id,))
+    # Determine which view to query based on the table
+    if table == 'experiment':
+        view_table = 'experiment_view'
+    elif table == 'researcher':
+        view_table = 'researcher_view'
+    else:
+        return "Invalid table name", 400
 
-    row = cur.fetchone()  # Fetch the first matching record
-    keys = [desc[0] for desc in cur.description]  # Get column names
-    cur.close()
-    connection_pool.putconn(conn)
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    # Combine keys and row data into a dictionary
-    content = dict(zip(keys, row))
+        # Safe SQL: use parameterized query, prevent SQL injection
+        query = f"""
+            SELECT * FROM {view_table} AS r
+            JOIN {table} AS v ON r.{name_column} = v.{name_column}
+            WHERE v.{name_column} = %s
+        """
+        cur.execute(query, (record_id,))
+        row = cur.fetchone()
 
-    # Pass content and keys to the template for rendering
-    return render_template('view.html', table_name = table, content=content, keys=keys)
+        if row is None:
+            return "No record found", 404
+
+        keys = [desc[0] for desc in cur.description]
+        content = dict(zip(keys, row))
+
+        cur.close()
+        connection_pool.putconn(conn)
+
+        # Render the appropriate template
+        if table == 'experiment':
+            return render_template('experiment_view.html', experiment=content ,keys=keys)
+        elif table == 'researcher':
+            return render_template('view.html', content=content , keys=keys)
+
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 @app.route('/back')
 def back():
@@ -198,7 +220,7 @@ def add():
 form_tree = {
     'researcher': ['researcher_view'],
     'researcher_view': [],
-    'experiment': ['chemical_usage'],
+    'experiment': ['experiment_view' , 'chemical_usage'],
     'lab': [],
     'equipment': [],
     'chemical': [],
@@ -314,7 +336,7 @@ def addrow():
             flash('Record added successfully!', 'success')
             return redirect(f'/dashboard?table={root_table}')
 
-    # GET request - show form for current table
+   
     rows, keys = database_table(table)
     next_tables = form_tree.get(table, [])
     is_last = not bool(next_tables)

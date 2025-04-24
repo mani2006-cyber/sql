@@ -15,6 +15,9 @@
   {% include 'nav.html' %}
 
 
+  
+
+
 
   {% if content %}
     <div class='container col-8' style='margin-top: 100px;'>
@@ -28,6 +31,9 @@
           {% endfor %}
         {% endif %}
       {% endwith %}
+
+      <h2>{{ table_name.replace('_', ' ').title() }}</h2>
+      
       <table class='table table-striped'>
         <tr>
           {% for head in keys %}
@@ -46,8 +52,8 @@
             <a href="/deletee?table={{table_name}}&id={{row[keys[0]]}}&id_key={{keys[0]}}" class="btn btn-danger">Delete</a>
 
 
-            {% if table_name == 'researcher' %}
-            <a href="/view?table={{ table_name }}&id={{ row[keys[0]] }}" class="btn btn-info">View</a>
+            {% if(table_name == 'researcher' or table_name == 'experiment') %}
+            <a href="/view?table={{ table_name }}&id={{ row[keys[0]] }}&name={{ keys[0] }}" class="btn btn-info">View</a>
 
             {% endif %}
           </td>
@@ -67,7 +73,7 @@
 
   {% else %}
     <div class='container col-8' style='margin-top: 100px;'>
-      <h2>Welcome! Select a table from the navbar.</h2>
+      <h2> table is empty </h2>
     </div>
   {% endif %}
 

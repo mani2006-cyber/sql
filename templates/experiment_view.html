@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Experiment View</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f2f6fc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        .card-title {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .card {
+            border: none;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        .card-body {
+            background: white;
+            border-radius: 10px;
+        }
+        .label {
+            font-weight: bold;
+            color: #34495e;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2 class="mb-4 text-center text-primary">Experiment Details</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Title of the Experiment</h5>
+            <p>{{ experiment.title }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Objective / Aim</h5>
+            <p>{{ experiment.objective }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Apparatus / Materials Required</h5>
+            <p>{{ experiment.apparatus }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Theory or Background</h5>
+            <p>{{ experiment.theory }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Procedure / Steps</h5>
+            <p>{{ experiment.procedure }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Observations / Data Table</h5>
+            <p>{{ experiment.observations }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Result / Conclusion</h5>
+            <p>{{ experiment.result }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Precautions</h5>
+            <p>{{ experiment.precautions }}</p>
+        </div>
+    </div>
+
+    <a href="/back?table=experiment" class="btn btn-outline-primary">Back to Experiments</a>
+
+    </div>
+</div>
+</body>
+</html>
