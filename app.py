@@ -1,14 +1,17 @@
 from flask import Flask, render_template, request ,session , jsonify , flash , redirect
 import psycopg2
 from psycopg2 import pool
-import atexit  # to clean up at app exit
+import atexit  
+import os
 
 app = Flask(__name__)
 app.secret_key = '567890'
 
-# Initialize connection pool globally
+my_secret = os.environ['DB_CONNECTION_STRING']
+
+
 connection_pool = pool.SimpleConnectionPool(
-    1, 20, "postgresql://postgres.jrkbymyasrgwhxlegahu:GhtLRCh7ALXsMbPN@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
+    1, 20, my_secret
 )
 
 conn = connection_pool.getconn()
@@ -61,7 +64,7 @@ def edit():
         content = None
 
         for row in rows:
-            if str(row[0]) == str(record_id):  # Compare as strings to avoid type issues
+            if str(row[0]) == str(record_id):  
                 content = dict(zip(keys, row))
                 break
 
@@ -89,15 +92,15 @@ def update():
 
     try:
         data = request.form.to_dict()
-        # Remove metadata fields
+        
         for field in ['table', 'id', 'id_key']:
             data.pop(field, None)
 
-        # Get column info to validate
+        
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Get column types for proper value handling
+        
         cur.execute("""
             SELECT column_name, data_type 
             FROM information_schema.columns 
@@ -105,12 +108,12 @@ def update():
         """, (table,))
         column_types = {row[0]: row[1] for row in cur.fetchall()}
 
-        # Prepare update data
+        
         set_clauses = []
         values = []
         for key, value in data.items():
             if key in column_types:
-                # Handle empty values based on column type
+               
                 if value == '':
                     if column_types[key] in ('date', 'timestamp without time zone'):
                         value = None
@@ -124,7 +127,9 @@ def update():
             flash('No valid fields to update', 'error')
             return redirect(f'/dashboard?table={table}')
 
-        # Add record ID for WHERE clause
+        
+
+        
         values.append(record_id)
 
         query = f'UPDATE "{table}" SET {", ".join(set_clauses)} WHERE "{id_key}" = %s'
@@ -167,7 +172,6 @@ def view():
     record_id = request.args.get('id')
     name_column = request.args.get('name')
 
-    # Determine which view to query based on the table
     if table == 'experiment':
         view_table = 'experiment_view'
     elif table == 'researcher':
@@ -179,7 +183,6 @@ def view():
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Safe SQL: use parameterized query, prevent SQL injection
         query = f"""
             SELECT * FROM {view_table} AS r
             JOIN {table} AS v ON r.{name_column} = v.{name_column}
@@ -197,7 +200,6 @@ def view():
         cur.close()
         connection_pool.putconn(conn)
 
-        # Render the appropriate template
         if table == 'experiment':
             return render_template('experiment_view.html', experiment=content ,keys=keys)
         elif table == 'researcher':
@@ -233,22 +235,18 @@ def post(tables, data_list):
     cur = conn.cursor()
     try:
         for table, data in zip(tables, data_list):
-            if not data:  # Skip if no data
+            if not data: 
                 continue
 
-            # Create a copy of the data dictionary and remove non-column fields
             data_copy = data.copy()
 
-            # Remove special fields that shouldn't be inserted into the table
             for field in ['table', 'action']:
                 if field in data_copy:
                     del data_copy[field]
 
-            # Get the actual column names from the database
             cur.execute(f'SELECT column_name FROM information_schema.columns WHERE table_name = %s', (table,))
             valid_columns = [row[0] for row in cur.fetchall()]
 
-            # Filter out any keys that aren't actual columns in the table
             filtered_data = {k: v for k, v in data_copy.items() if k in valid_columns}
 
             if not filtered_data:
@@ -276,22 +274,21 @@ def post(tables, data_list):
 def addrow():
     table = request.args.get('table')
     if request.method == 'POST':
-        table = request.form.get('table', table)  # Get table from form data if available
+        table = request.form.get('table', table) 
     if not table:
         flash('No table specified', 'error')
         return redirect('/')
 
     if request.method == 'POST':
-        # Handle form submission
+        
         data = request.form.to_dict()
         next_tables = form_tree.get(table, [])
 
-        # Store current data in session for multi-step forms
         if 'form_data' not in session:
             session['form_data'] = {}
         session['form_data'][table] = data
 
-        # Check if there are more steps
+        
         if next_tables:
             next_table = next_tables[0]  # Get first child table
             rows, keys = database_table(next_table)
