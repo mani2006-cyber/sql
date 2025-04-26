@@ -56,7 +56,7 @@ def edit():
     record_id = request.args.get('id')
 
     if not table or not record_id:
-        flash('Missing table or record ID', 'error')
+        flash('Missing table or record ID', 'danger')
         return redirect('/dashboard')
 
     try:
@@ -69,7 +69,7 @@ def edit():
                 break
 
         if not content:
-            flash('Record not found', 'error')
+            flash('Record not found', 'danger')
             return redirect(f'/dashboard?table={table}')
 
         return render_template('edit.html', 
@@ -77,7 +77,7 @@ def edit():
                             content=content, 
                             keys=keys)
     except Exception as e:
-        flash(f'Error retrieving record: {str(e)}', 'error')
+        flash(f'Error retrieving record: {str(e)}', 'danger')
         return redirect(f'/dashboard?table={table}')
 
 @app.route('/update', methods=['POST'])
@@ -87,7 +87,7 @@ def update():
     id_key = request.form.get('id_key')
 
     if not all([table, record_id, id_key]):
-        flash('Missing required parameters', 'error')
+        flash('Missing required parameters', 'danger')
         return redirect('/dashboard')
 
     try:
@@ -124,7 +124,7 @@ def update():
                 values.append(value)
 
         if not set_clauses:
-            flash('No valid fields to update', 'error')
+            flash('No valid fields to update', 'danger')
             return redirect(f'/dashboard?table={table}')
 
         
@@ -141,7 +141,7 @@ def update():
 
     except Exception as e:
         conn.rollback()
-        flash(f'Error updating record: {str(e)}', 'error')
+        flash(f'Error updating record: {str(e)}', 'danger')
         return redirect(f'/edit?table={table}&id={record_id}')
     finally:
         cur.close()
@@ -161,7 +161,7 @@ def deletee():
         flash('Record deleted successfully!', 'success')
     except Exception as e:
         conn.rollback()
-        flash(f'Error deleting record: {str(e)}', 'error')
+        flash(f'Error deleting record: {str(e)}', 'danger')
     cur.close()
     connection_pool.putconn(conn)
     return redirect(f'/dashboard?table={table}')
@@ -264,7 +264,7 @@ def post(tables, data_list):
         return True
     except Exception as e:
         conn.rollback()
-        flash(f'Error saving data: {str(e)}', 'error')
+        flash(f'Error saving data: {str(e)}', 'danger')
         return False
     finally:
         cur.close()
@@ -276,7 +276,7 @@ def addrow():
     if request.method == 'POST':
         table = request.form.get('table', table) 
     if not table:
-        flash('No table specified', 'error')
+        flash('No table specified', 'danger')
         return redirect('/')
 
     if request.method == 'POST':
@@ -325,12 +325,12 @@ def addrow():
                 tables_to_process.extend(form_tree.get(current, []))
 
             # Post all data
-            post(all_tables, all_data)
+            result = post(all_tables, all_data)
 
             # Clear session data
             session.pop('form_data', None)
-
-            flash('Record added successfully!', 'success')
+            if result == True:
+                flash('Record added successfully!', 'success')
             return redirect(f'/dashboard?table={root_table}')
 
    
